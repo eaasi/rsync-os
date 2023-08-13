@@ -5,11 +5,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/kaiakz/ubuffer"
 	"io"
 	"log"
 	"sort"
 	"time"
+
+	"github.com/kaiakz/ubuffer"
 )
 
 /*
@@ -178,6 +179,14 @@ func (r *Receiver) RecvFileList() (FileList, map[string][]byte, error) {
 
 // Generator: handle files: if it's a regular file, send its index. Otherwise, put them to storage
 func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks map[string][]byte) error {
+	download := make(chan error)
+	go func() {
+		startTime := time.Now()
+		err := r.FileDownloader(remoteList[:])
+		log.Println("Downloaded duration:", time.Since(startTime))
+		download <- err
+	}()
+
 	emptyBlocks := make([]byte, 16) // 4 + 4 + 4 + 4 bytes, all bytes set to 0
 	content := new(bytes.Buffer)
 
@@ -220,10 +229,7 @@ func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks m
 	}
 	log.Println("Request completed")
 
-	startTime := time.Now()
-	err := r.FileDownloader(remoteList[:])
-	log.Println("Downloaded duration:", time.Since(startTime))
-	return err
+	return <-download
 }
 
 // TODO: It is better to update files in goroutine
