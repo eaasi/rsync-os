@@ -51,7 +51,7 @@ func NewMinio(bucket string, prefix string, cachePath string, endpoint string, a
 			log.Fatalln(err)
 		}
 	} else {
-		log.Printf("Successfully created %s\n", bucket)
+		log.Printf("Successfully created %s (depending on the S3 provider, the bucket also may already have existed)\n", bucket)
 	}
 
 	// Initialize cache
