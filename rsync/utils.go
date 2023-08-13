@@ -119,5 +119,5 @@ func longestMatch(left []byte, right []byte) int {
 			break
 		}
 	}
-	return i;
+	return i
 }

@@ -30,7 +30,7 @@ func loadConfigIfExists() {
 
 func createSampleConfig() {
 	confSample := []byte(
-`title = "configuration of rsync-os"
+		`title = "configuration of rsync-os"
 
 # [object storage's name] 
 [minio]

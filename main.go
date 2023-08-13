@@ -39,7 +39,6 @@ func ClientS3(src string, dest string) {
 	dbconf := viper.GetStringMapString(dest + ".boltdb")
 	minioConf := viper.GetStringMapString(dest)
 
-
 	stor, _ := storage.NewMinio(module, ppath, dbconf["path"], minioConf["endpoint"], minioConf["keyaccess"], minioConf["keysecret"], false)
 	defer stor.Close()
 
