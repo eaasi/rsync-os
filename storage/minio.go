@@ -2,9 +2,6 @@ package storage
 
 import (
 	"bytes"
-	"github.com/golang/protobuf/proto"
-	"github.com/minio/minio-go/v6"
-	bolt "go.etcd.io/bbolt"
 	"io"
 	"log"
 	"path"
@@ -14,6 +11,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/minio/minio-go/v6"
+	bolt "go.etcd.io/bbolt"
 )
 
 /*

@@ -1,11 +1,12 @@
 package cache
 
 import (
-	"github.com/golang/protobuf/proto"
-	bolt "go.etcd.io/bbolt"
 	"log"
 	"rsync-os/rsync"
 	"time"
+
+	"github.com/golang/protobuf/proto"
+	bolt "go.etcd.io/bbolt"
 )
 
 // Test

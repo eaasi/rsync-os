@@ -1,10 +1,11 @@
 package rsync
 
 import (
-	"github.com/pkg/errors"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 func SplitURIS(uri string) (string, int, string, string, error) {
