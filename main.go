@@ -11,11 +11,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/spf13/viper"
 	"log"
 	"rsync-os/rsync"
 	"rsync-os/storage"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 func ClientS3(src string, dest string) {
@@ -39,7 +40,7 @@ func ClientS3(src string, dest string) {
 	dbconf := viper.GetStringMapString(dest + ".boltdb")
 	minioConf := viper.GetStringMapString(dest)
 
-	stor, _ := storage.NewMinio(module, ppath, dbconf["path"], minioConf["endpoint"], minioConf["keyaccess"], minioConf["keysecret"], false)
+	stor, _ := storage.NewMinio(minioConf["bucket"], ppath, dbconf["path"], minioConf["endpoint"], minioConf["keyaccess"], minioConf["keysecret"], false)
 	defer stor.Close()
 
 	client, err := rsync.SocketClient(stor, addr, module, ppath, nil)
