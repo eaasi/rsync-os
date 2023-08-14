@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"rsync-os/rsync"
@@ -38,6 +39,9 @@ const S3_DIR = ".dir.rsync-os"
 
 func NewMinio(bucket string, prefix string, cachePath string, endpoint string, accessKeyID string, secretAccessKey string, secure bool) (*Minio, error) {
 	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, false)
+	if os.Getenv("debug") != "" {
+		minioClient.TraceOn(nil)
+	}
 	if err != nil {
 		panic("Failed to init a minio client")
 	}
