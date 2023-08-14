@@ -201,7 +201,7 @@ func (m *Minio) List() (rsync.FileList, error) {
 	defer close(doneCh)
 
 	// FIXME: objectPrefix, recursive
-	objectCh := m.client.ListObjectsV2(m.bucketName, "", true, doneCh)
+	objectCh := m.client.ListObjectsV2(m.bucketName, m.prefix, true, doneCh)
 	for object := range objectCh {
 		if object.Err != nil {
 			log.Println(object.Err)
@@ -209,20 +209,14 @@ func (m *Minio) List() (rsync.FileList, error) {
 		}
 
 		// FIXME: Handle folder
-		objectName := object.Key
+		objectName := object.Key[len(m.prefix):]
 		if strings.Compare(path.Base(objectName), "...") == 0 {
 			objectName = path.Dir(objectName)
 		}
 
-		mtime, err := strconv.Atoi(object.UserMetadata["mtime"])
-		if err != nil {
-			panic("Can't get the mode from minio")
-		}
-
-		mode, err := strconv.Atoi(object.UserMetadata["mtime"])
-		if err != nil {
-			panic("Can't get the mode from minio")
-		}
+		// Have to rely on Last-Modified date as most S3 providers do not provide user metadata in ListObjectsV2
+		mtime := int(object.LastModified.Unix())
+		mode := 0
 
 		filelist = append(filelist, rsync.FileInfo{
 			Path:  []byte(objectName),

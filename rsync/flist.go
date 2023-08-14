@@ -175,7 +175,7 @@ func (L FileList) Diff(R FileList) (newitems []int, olditems []int) {
 		// If -1, A doesn't have
 		switch bytes.Compare(L[i].Path, R[j].Path) {
 		case 0:
-			if L[i].Mtime != R[j].Mtime || L[i].Size != R[j].Size {
+			if L[i].Mtime < R[j].Mtime || L[i].Size != R[j].Size {
 				newitems = append(newitems, j)
 			}
 			i++
