@@ -226,6 +226,9 @@ func (m *Minio) List() (rsync.FileList, error) {
 			Mode:  rsync.FileMode(mode),
 		})
 	}
+
+	sort.Sort(filelist)
+
 	return filelist, nil
 }
 
