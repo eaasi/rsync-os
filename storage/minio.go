@@ -100,6 +100,7 @@ func (m *Minio) Put(fileName string, content io.Reader, fileSize int64, metadata
 		fname = filepath.Join(m.prefix, fileName, S3_DIR)
 		fsize = 0
 		// FIXME: How to handle a file named ".rsync-os.dir"?
+		return
 	}
 
 	if metadata.Mode.IsLNK() {
