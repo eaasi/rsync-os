@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"sort"
 	"time"
 
@@ -380,9 +381,11 @@ func (r *Receiver) Sync() error {
 	if err != nil {
 		return err
 	}
-	//for _, v := range lfiles {
-	//	fmt.Println("Local File:", string(v.Path), v.Mode, v.Mtime)
-	//}
+	if os.Getenv("verbose") != "" {
+		for _, v := range lfiles {
+			fmt.Println("Local File:", string(v.Path), v.Mode, v.Mtime)
+		}
+	}
 
 	rfiles, symlinks, err := r.RecvFileList()
 	if err != nil {
@@ -400,7 +403,21 @@ func (r *Receiver) Sync() error {
 	if len(newfiles) == 0 && len(oldfiles) == 0 {
 		log.Println("There is nothing to do")
 	}
-	fmt.Print(newfiles, oldfiles)
+
+	if os.Getenv("verbose") != "" {
+		// fmt.Print(newfiles, oldfiles)
+		fmt.Println("New files:")
+		for _, i := range newfiles {
+			v := rfiles[i]
+			fmt.Println("Remote File:", string(v.Path), v.Mode, v.Mtime)
+		}
+		fmt.Println("Old files:")
+		for _, i := range oldfiles {
+			v := lfiles[i]
+			fmt.Println("Local File:", string(v.Path), v.Mode, v.Mtime)
+		}
+		fmt.Println("--- End of list")
+	}
 
 	if err := r.Generator(rfiles[:], newfiles[:], symlinks); err != nil {
 		return err
