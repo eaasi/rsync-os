@@ -7,6 +7,7 @@ import (
 type FileMetadata struct {
 	Mtime int32
 	Mode  FileMode
+	User  map[string]string
 }
 
 // File System: need to handle all type of files: regular, folder, symlink, etc

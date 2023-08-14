@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
+	"path"
 	"sort"
 	"time"
 
@@ -23,12 +25,21 @@ import (
 */
 type Receiver struct {
 	conn    *Conn
+	address string
 	module  string
 	path    string
 	seed    int32
 	lVer    int32
 	rVer    int32
 	storage FS
+}
+
+func (r *Receiver) URL() *url.URL {
+	return &url.URL{
+		Scheme: "rsync",
+		Host:   r.address,
+		Path:   path.Join(r.module, r.path),
+	}
 }
 
 func (r *Receiver) BuildArgs() string {
@@ -180,6 +191,7 @@ func (r *Receiver) RecvFileList() (FileList, map[string][]byte, error) {
 
 // Generator: handle files: if it's a regular file, send its index. Otherwise, put them to storage
 func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks map[string][]byte) error {
+	url := r.URL().String()
 	download := make(chan error)
 	go func() {
 		startTime := time.Now()
@@ -217,6 +229,10 @@ func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks m
 			if _, err := r.storage.Put(string(remoteList[v].Path), content, size, FileMetadata{
 				Mtime: remoteList[v].Mtime,
 				Mode:  remoteList[v].Mode,
+				User: map[string]string{
+					"original-url":         url + "/" + string(remoteList[v].Path),
+					"synchronization-date": time.Now().UTC().Format(time.RFC3339),
+				},
 			}); err != nil {
 				return err
 			}
@@ -235,6 +251,7 @@ func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks m
 
 // TODO: It is better to update files in goroutine
 func (r *Receiver) FileDownloader(localList FileList) error {
+	url := r.URL().String()
 
 	rmd4 := make([]byte, 16)
 
@@ -331,6 +348,10 @@ func (r *Receiver) FileDownloader(localList FileList) error {
 		n, err = r.storage.Put(string(path), buffer, int64(downloadeSize), FileMetadata{
 			Mtime: localList[index].Mtime,
 			Mode:  localList[index].Mode,
+			User: map[string]string{
+				"original-url":         url + "/" + string(path),
+				"synchronization-date": time.Now().UTC().Format(time.RFC3339),
+			},
 		})
 		if err != nil {
 			return err

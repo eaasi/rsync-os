@@ -104,6 +104,7 @@ func SocketClient(storage FS, address string, module string, path string, option
 
 	return &Receiver{
 		conn:    conn,
+		address: address,
 		module:  module,
 		path:    path,
 		seed:    seed,

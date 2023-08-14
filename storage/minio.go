@@ -90,6 +90,9 @@ func (m *Minio) Put(fileName string, content io.Reader, fileSize int64, metadata
 	data := make(map[string]string)
 	data["mtime"] = strconv.Itoa(int(metadata.Mtime))
 	data["mode"] = strconv.Itoa(int(metadata.Mode))
+	for k, v := range metadata.User {
+		data[k] = v
+	}
 
 	fpath := filepath.Join(m.prefix, fileName)
 	fsize := fileSize
