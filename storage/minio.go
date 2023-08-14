@@ -138,7 +138,7 @@ func (m *Minio) Delete(fileName string, mode rsync.FileMode) (err error) {
 }
 
 // EXPERIMENTAL
-func (m *Minio) List() (rsync.FileList, error) {
+func (m *Minio) ListCache() (rsync.FileList, error) {
 	filelist := make(rsync.FileList, 0, 1<<16)
 
 	// We don't list all files directly
@@ -191,7 +191,7 @@ func (m *Minio) List() (rsync.FileList, error) {
 	return filelist, nil
 }
 
-func (m *Minio) ListObj() (rsync.FileList, error) {
+func (m *Minio) List() (rsync.FileList, error) {
 	filelist := make(rsync.FileList, 0, 1<<16)
 
 	// Create a done channel to control 'ListObjects' go routine.
