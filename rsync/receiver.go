@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -32,6 +33,16 @@ type Receiver struct {
 	lVer    int32
 	rVer    int32
 	storage FS
+}
+
+func ProvenanceHeaders(url string, date time.Time) map[string]string {
+	if date.IsZero() {
+		date = time.Now()
+	}
+	return map[string]string{
+		"original-location":    url,
+		"synchronization-date": date.UTC().Format(http.TimeFormat),
+	}
 }
 
 func (r *Receiver) URL() *url.URL {
@@ -229,10 +240,7 @@ func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks m
 			if _, err := r.storage.Put(string(remoteList[v].Path), content, size, FileMetadata{
 				Mtime: remoteList[v].Mtime,
 				Mode:  remoteList[v].Mode,
-				User: map[string]string{
-					"original-location":    url + "/" + string(remoteList[v].Path),
-					"synchronization-date": time.Now().UTC().Format(time.RFC3339),
-				},
+				User:  ProvenanceHeaders(url+"/"+string(remoteList[v].Path), time.Time{}),
 			}); err != nil {
 				return err
 			}
@@ -348,10 +356,7 @@ func (r *Receiver) FileDownloader(localList FileList) error {
 		n, err = r.storage.Put(string(path), buffer, int64(downloadeSize), FileMetadata{
 			Mtime: localList[index].Mtime,
 			Mode:  localList[index].Mode,
-			User: map[string]string{
-				"original-location":    url + "/" + string(path),
-				"synchronization-date": time.Now().UTC().Format(time.RFC3339),
-			},
+			User:  ProvenanceHeaders(url+"/"+string(path), time.Time{}),
 		})
 		if err != nil {
 			return err
