@@ -55,20 +55,6 @@ func (r *Receiver) URL() *url.URL {
 	}
 }
 
-func (r *Receiver) BuildArgs() string {
-	return ""
-}
-
-// DeMux was started here
-func (r *Receiver) StartMuxIn() {
-	r.conn.reader = NewMuxReaderV0(r.conn.reader)
-}
-
-func (r *Receiver) SendExclusions() error {
-	// Send exclusion
-	return r.conn.WriteInt(EXCLUSION_END)
-}
-
 // Return a filelist from remote
 func (r *Receiver) RecvFileList() (FileList, map[string][]byte, error) {
 	filelist := make(FileList, 0, 1*M)
