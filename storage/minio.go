@@ -2,16 +2,18 @@ package storage
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"rsync-os/rsync"
 	"rsync-os/storage/cache"
 	"sort"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/minio/minio-go/v6"
@@ -88,8 +90,8 @@ func NewMinio(bucket string, prefix string, cachePath string, endpoint string, a
 // object can be a regualar file, folder or symlink
 func (m *Minio) Put(fileName string, content io.Reader, fileSize int64, metadata rsync.FileMetadata) (written int64, err error) {
 	data := make(map[string]string)
-	data["mtime"] = strconv.Itoa(int(metadata.Mtime))
-	data["mode"] = strconv.Itoa(int(metadata.Mode))
+	data["original-last-modified"] = time.Unix(int64(metadata.Mtime), 0).UTC().Format(http.TimeFormat)
+	data["original-file-mode"] = fmt.Sprintf("%#o", metadata.Mode)
 	for k, v := range metadata.User {
 		data[k] = v
 	}

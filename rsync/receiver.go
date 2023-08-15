@@ -230,7 +230,7 @@ func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks m
 				Mtime: remoteList[v].Mtime,
 				Mode:  remoteList[v].Mode,
 				User: map[string]string{
-					"original-url":         url + "/" + string(remoteList[v].Path),
+					"original-location":    url + "/" + string(remoteList[v].Path),
 					"synchronization-date": time.Now().UTC().Format(time.RFC3339),
 				},
 			}); err != nil {
@@ -349,7 +349,7 @@ func (r *Receiver) FileDownloader(localList FileList) error {
 			Mtime: localList[index].Mtime,
 			Mode:  localList[index].Mode,
 			User: map[string]string{
-				"original-url":         url + "/" + string(path),
+				"original-location":    url + "/" + string(path),
 				"synchronization-date": time.Now().UTC().Format(time.RFC3339),
 			},
 		})
