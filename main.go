@@ -37,10 +37,9 @@ func ClientS3(src string, dest string) {
 	}
 
 	// Config
-	dbconf := viper.GetStringMapString(dest + ".boltdb")
 	minioConf := viper.GetStringMapString(dest)
 
-	stor, _ := storage.NewMinio(minioConf["bucket"], minioConf["prefix"]+ppath, dbconf["path"], minioConf["endpoint"], minioConf["keyaccess"], minioConf["keysecret"], false)
+	stor, _ := storage.NewMinio(minioConf["bucket"], minioConf["prefix"]+ppath, minioConf["endpoint"], minioConf["keyaccess"], minioConf["keysecret"], false)
 	defer stor.Close()
 
 	client, err := rsync.SocketClient(stor, addr, module, ppath, nil)

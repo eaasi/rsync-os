@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -10,14 +9,11 @@ import (
 	"path"
 	"path/filepath"
 	"rsync-os/rsync"
-	"rsync-os/storage/cache"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/minio/minio-go/v6"
-	bolt "go.etcd.io/bbolt"
 )
 
 /*
@@ -31,15 +27,11 @@ type Minio struct {
 	client     *minio.Client
 	bucketName string
 	prefix     string
-	/* Cache */
-	cache  *bolt.DB
-	tx     *bolt.Tx
-	bucket *bolt.Bucket
 }
 
 const S3_DIR = ".dir.rsync-os"
 
-func NewMinio(bucket string, prefix string, cachePath string, endpoint string, accessKeyID string, secretAccessKey string, secure bool) (*Minio, error) {
+func NewMinio(bucket string, prefix string, endpoint string, accessKeyID string, secretAccessKey string, secure bool) (*Minio, error) {
 	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, false)
 	if os.Getenv("debug") != "" {
 		minioClient.TraceOn(nil)
@@ -61,29 +53,10 @@ func NewMinio(bucket string, prefix string, cachePath string, endpoint string, a
 		log.Printf("Successfully created %s (depending on the S3 provider, the bucket also may already have existed)\n", bucket)
 	}
 
-	// Initialize cache
-	db, err := bolt.Open(cachePath, 0666, nil)
-	if err != nil {
-		panic("Can't init cache: boltdb")
-	}
-	tx, err := db.Begin(true)
-	if err != nil {
-		panic(err)
-	}
-
-	// If bucket does not exist, create the bucket
-	mod, err := tx.CreateBucketIfNotExists([]byte(bucket))
-	if err != nil {
-		return nil, err
-	}
-
 	return &Minio{
 		client:     minioClient,
 		bucketName: bucket,
 		prefix:     prefix,
-		cache:      db,
-		tx:         tx,
-		bucket:     mod,
 	}, nil
 }
 
@@ -116,18 +89,6 @@ func (m *Minio) Put(fileName string, content io.Reader, fileSize int64, metadata
 
 	written, err = m.client.PutObject(m.bucketName, fname, content, fsize, minio.PutObjectOptions{UserMetadata: data})
 
-	value, err := proto.Marshal(&cache.FInfo{
-		Size:  fileSize,
-		Mtime: metadata.Mtime,
-		Mode:  int32(metadata.Mode), // FIXME: convert uint32 to int32
-	})
-	if err != nil {
-		return -1, err
-	}
-	if err := m.bucket.Put([]byte(fpath), value); err != nil {
-		return -1, err
-	}
-
 	return
 }
 
@@ -142,61 +103,7 @@ func (m *Minio) Delete(fileName string, mode rsync.FileMode) (err error) {
 		}
 	}
 	log.Println(fileName)
-	return m.bucket.Delete([]byte(fpath))
-}
-
-// EXPERIMENTAL
-func (m *Minio) ListCache() (rsync.FileList, error) {
-	filelist := make(rsync.FileList, 0, 1<<16)
-
-	// We don't list all files directly
-
-	info := &cache.FInfo{}
-
-	// Add files in the work dir
-	c := m.bucket.Cursor()
-	prefix := []byte(m.prefix)
-	k, v := c.Seek(prefix)
-	hasdot := false
-	for k != nil && bytes.HasPrefix(k, prefix) {
-		p := k[len(prefix):]
-		if bytes.Equal(p, []byte(".")) {
-			hasdot = true
-		}
-
-		if err := proto.Unmarshal(v, info); err != nil {
-			return filelist, err
-		}
-		filelist = append(filelist, rsync.FileInfo{
-			Path:  p, // ignore prefix
-			Size:  info.Size,
-			Mtime: info.Mtime,
-			Mode:  rsync.FileMode(info.Mode),
-		})
-		k, v = c.Next()
-	}
-
-	// Add current dir as .
-	if !hasdot {
-		workdir := []byte(filepath.Clean(m.prefix)) // If a empty string, we get "."
-		v := m.bucket.Get(workdir)
-		if v == nil {
-			return filelist, nil
-		}
-		if err := proto.Unmarshal(v, info); err != nil {
-			return filelist, err
-		}
-		filelist = append(filelist, rsync.FileInfo{
-			Path:  []byte("."),
-			Size:  info.Size,
-			Mtime: info.Mtime,
-			Mode:  rsync.FileMode(info.Mode),
-		})
-	}
-
-	sort.Sort(filelist)
-
-	return filelist, nil
+	return nil
 }
 
 func (m *Minio) List() (rsync.FileList, error) {
@@ -240,9 +147,5 @@ func (m *Minio) List() (rsync.FileList, error) {
 }
 
 func (m *Minio) Close() error {
-	defer m.cache.Close()
-	if err := m.tx.Commit(); err != nil {
-		return err
-	}
 	return nil
 }
