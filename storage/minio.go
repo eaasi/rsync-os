@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -29,8 +30,9 @@ type Minio struct {
 	prefix     string
 }
 
-func NewMinio(bucket string, prefix string, endpoint string, accessKeyID string, secretAccessKey string, secure bool) (*Minio, error) {
-	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, false)
+func NewMinio(bucket string, prefix string, endpoint string, accessKeyID string, secretAccessKey string) (*Minio, error) {
+	endpointUrl, _ := url.Parse(endpoint)
+	minioClient, err := minio.New(endpointUrl.Host, accessKeyID, secretAccessKey, endpointUrl.Scheme != "http")
 	if os.Getenv("debug") != "" {
 		minioClient.TraceOn(nil)
 	}
