@@ -29,8 +29,6 @@ type Minio struct {
 	prefix     string
 }
 
-const S3_DIR = ".dir.rsync-os"
-
 func NewMinio(bucket string, prefix string, endpoint string, accessKeyID string, secretAccessKey string, secure bool) (*Minio, error) {
 	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, false)
 	if os.Getenv("debug") != "" {
@@ -74,12 +72,8 @@ func (m *Minio) Put(fileName string, content io.Reader, fileSize int64, metadata
 	fpath := filepath.Join(m.prefix, fileName)
 	fsize := fileSize
 	fname := fpath
-	/* EXPERIMENTAL */
-	// Folder
 	if metadata.Mode.IsDIR() {
-		fname = filepath.Join(m.prefix, fileName, S3_DIR)
 		fsize = 0
-		// FIXME: How to handle a file named ".rsync-os.dir"?
 		return
 	}
 
@@ -96,11 +90,10 @@ func (m *Minio) Delete(fileName string, mode rsync.FileMode) (err error) {
 	fpath := filepath.Join(m.prefix, fileName)
 	// TODO: How to delete a folder
 	if mode.IsDIR() {
-		err = m.client.RemoveObject(m.bucketName, filepath.Join(fpath, S3_DIR))
-	} else {
-		if err = m.client.RemoveObject(m.bucketName, fpath); err != nil {
-			return
-		}
+		return
+	}
+	if err = m.client.RemoveObject(m.bucketName, fpath); err != nil {
+		return
 	}
 	log.Println(fileName)
 	return nil
