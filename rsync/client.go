@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 /* As a Client, we need to:
@@ -104,6 +106,7 @@ func SocketClient(storage FS, address string, module string, path string, option
 
 	return &Receiver{
 		conn:    conn,
+		runId:   "urn:uuid:" + uuid.New().String(),
 		address: address,
 		module:  module,
 		path:    path,

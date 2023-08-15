@@ -26,6 +26,7 @@ import (
 */
 type Receiver struct {
 	conn    *Conn
+	runId   string
 	address string
 	module  string
 	path    string
@@ -35,13 +36,14 @@ type Receiver struct {
 	storage FS
 }
 
-func ProvenanceHeaders(url string, date time.Time) map[string]string {
+func (r *Receiver) ProvenanceHeaders(url string, date time.Time) map[string]string {
 	if date.IsZero() {
 		date = time.Now()
 	}
 	return map[string]string{
 		"original-location":    url,
 		"synchronization-date": date.UTC().Format(http.TimeFormat),
+		"synchronization-run":  r.runId,
 	}
 }
 
@@ -240,7 +242,7 @@ func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks m
 			if _, err := r.storage.Put(string(remoteList[v].Path), content, size, FileMetadata{
 				Mtime: remoteList[v].Mtime,
 				Mode:  remoteList[v].Mode,
-				User:  ProvenanceHeaders(url+"/"+string(remoteList[v].Path), time.Time{}),
+				User:  r.ProvenanceHeaders(url+"/"+string(remoteList[v].Path), time.Time{}),
 			}); err != nil {
 				return err
 			}
@@ -356,7 +358,7 @@ func (r *Receiver) FileDownloader(localList FileList) error {
 		n, err = r.storage.Put(string(path), buffer, int64(downloadeSize), FileMetadata{
 			Mtime: localList[index].Mtime,
 			Mode:  localList[index].Mode,
-			User:  ProvenanceHeaders(url+"/"+string(path), time.Time{}),
+			User:  r.ProvenanceHeaders(url+"/"+string(path), time.Time{}),
 		})
 		if err != nil {
 			return err

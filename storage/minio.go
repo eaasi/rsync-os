@@ -93,7 +93,9 @@ func (m *Minio) Put(fileName string, content io.Reader, fileSize int64, metadata
 	data["original-last-modified"] = time.Unix(int64(metadata.Mtime), 0).UTC().Format(http.TimeFormat)
 	data["original-file-mode"] = fmt.Sprintf("%#o", metadata.Mode)
 	for k, v := range metadata.User {
-		data[k] = v
+		if v != "" {
+			data[k] = v
+		}
 	}
 
 	fpath := filepath.Join(m.prefix, fileName)
