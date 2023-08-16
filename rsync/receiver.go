@@ -3,6 +3,7 @@ package rsync
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,8 @@ import (
 	"time"
 
 	"rsync-os/ubuffer"
+
+	"golang.org/x/sync/semaphore"
 )
 
 /*
@@ -249,6 +252,10 @@ func (r *Receiver) Generator(remoteList FileList, downloadList []int, symlinks m
 func (r *Receiver) FileDownloader(localList FileList) error {
 	url := r.URL().String()
 
+	const parallelUploads = 10
+	uploads := semaphore.NewWeighted(parallelUploads)
+	defer uploads.Acquire(context.Background(), parallelUploads)
+
 	rmd4 := make([]byte, 16)
 
 	for {
@@ -341,20 +348,27 @@ func (r *Receiver) FileDownloader(localList FileList) error {
 		var n int64
 		n, err = buffer.Seek(0, io.SeekStart)
 
-		n, err = r.storage.Put(string(path), buffer, int64(downloadeSize), FileMetadata{
-			Mtime: localList[index].Mtime,
-			Mode:  localList[index].Mode,
-			User:  r.ProvenanceHeaders(url+"/"+string(path), time.Time{}),
-		})
-		if err != nil {
-			return err
-		}
+		uploads.Acquire(context.Background(), 1)
 
-		if buffer.Finalize() != nil {
-			return errors.New("Buffer can't be finalized")
-		}
+		go func() {
+			defer uploads.Release(1)
+			n, err = r.storage.Put(string(path), buffer, int64(downloadeSize), FileMetadata{
+				Mtime: localList[index].Mtime,
+				Mode:  localList[index].Mode,
+				User:  r.ProvenanceHeaders(url+"/"+string(path), time.Time{}),
+			})
+			if err != nil {
+				log.Println(err)
+				return
+			}
 
-		log.Printf("Successfully uploaded %s of size %d\n", path, n)
+			if buffer.Finalize() != nil {
+				log.Println(errors.New("Buffer can't be finalized"))
+				return
+			}
+
+			log.Printf("Successfully uploaded %s of size %d\n", path, n)
+		}()
 	}
 }
 
