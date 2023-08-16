@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"log"
 )
 
 //Multiplexing
@@ -61,7 +60,7 @@ func (r *MuxReader) readHeader() error {
 		tag := r.header[3]                                        // Little Endian
 		size := (binary.LittleEndian.Uint32(r.header) & 0xffffff) // TODO: zero?
 
-		log.Printf("<DEMUX> tag %d size %d\n", tag, size)
+		// log.Printf("<DEMUX> tag %d size %d\n", tag, size)
 
 		if tag == (MUX_BASE + MSG_DATA) { // MUX_BASE + MSG_DATA
 			r.remain = size

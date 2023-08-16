@@ -307,7 +307,7 @@ func (r *Receiver) FileDownloader(localList FileList) error {
 			if err != nil {
 				return err
 			}
-			log.Println("TOKEN", token)
+			// log.Println("TOKEN", token)
 			if token == 0 {
 				break
 			} else if token < 0 {
