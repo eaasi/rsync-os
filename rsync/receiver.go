@@ -14,7 +14,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kaiakz/ubuffer"
+	"rsync-os/ubuffer"
 )
 
 /*
